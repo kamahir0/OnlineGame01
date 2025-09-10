@@ -1,5 +1,7 @@
 // --- Program.cs ---
 
+using OnlineGame01;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ----------------------------------------------------
@@ -9,7 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. コントローラー機能を使えるように登録
 builder.Services.AddControllers();
 
-// 2. Swagger/OpenAPIの機能を使えるように登録
+// 2. DbContext機能を使えるように登録
+builder.Services.AddDbContext<GameDbContext>();
+
+// 3. Swagger/OpenAPIの機能を使えるように登録
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

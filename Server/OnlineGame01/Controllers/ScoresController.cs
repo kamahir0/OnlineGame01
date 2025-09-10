@@ -2,28 +2,42 @@
 
 // Controllers/ScoresController.cs
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore; // これを追加
 
 [ApiController]
-[Route("api/[controller]")] // このAPIのURLは /api/scores になります
+[Route("api/[controller]")]
 public class ScoresController : ControllerBase
 {
+    private readonly GameDbContext _context;
+
+    // コンストラクタで、登録しておいたDbContextを受け取ります
+    public ScoresController(GameDbContext context)
+    {
+        _context = context;
+    }
+
     // --- スコアを登録するための窓口 (POST) ---
     [HttpPost]
-    public IActionResult AddScore([FromBody] PlayerScore score)
+    public async Task<IActionResult> AddScore([FromBody] PlayerScore score)
     {
-        InMemoryDatabase.AddScore(score);
-        return Ok("Score added successfully!"); // 「成功しましたよ」と返事をする
+        // InMemoryDatabaseの代わりにDbContextを使います
+        score.Timestamp = DateTime.UtcNow;
+        _context.Scores.Add(score);
+        await _context.SaveChangesAsync(); // 変更をデータベースに保存（非同期）
+
+        return Ok("Score added successfully!");
     }
 
     // --- ランキングを取得するための窓口 (GET) ---
     [HttpGet]
-    public IActionResult GetScores()
+    public async Task<IActionResult> GetScores()
     {
-        var topScores = InMemoryDatabase.Scores
-            .OrderByDescending(s => s.Score) // スコアが高い順に並び替え
-            .Take(10) // 上位10件だけ取得
-            .ToList();
+        // InMemoryDatabaseの代わりにDbContextを使います
+        var topScores = await _context.Scores
+            .OrderByDescending(s => s.Score)
+            .Take(10)
+            .ToListAsync(); // データベースからリストを取得（非同期）
 
-        return Ok(topScores); // 取得したランキングデータを返す
+        return Ok(topScores);
     }
 }
