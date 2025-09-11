@@ -8,6 +8,8 @@ public class GameDbContext : DbContext
     // 1. PlayerScoreを保存するためのテーブルが欲しい、とEF Coreに伝えます
     public DbSet<PlayerScore> Scores { get; set; }
 
+    public DbSet<User> Users { get; set; }
+
     // 2. データベースのファイル名を指定します
     private const string DatabaseName = "ranking.db";
 
