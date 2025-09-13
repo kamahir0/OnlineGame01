@@ -11,8 +11,8 @@ using OnlineGame01;
 namespace OnlineGame01.Migrations
 {
     [DbContext(typeof(GameDbContext))]
-    [Migration("20250911144511_AddUserTable")]
-    partial class AddUserTable
+    [Migration("20250913064706_LinkUserToScore")]
+    partial class LinkUserToScore
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -26,17 +26,18 @@ namespace OnlineGame01.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("PlayerName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Scores");
                 });
@@ -58,6 +59,22 @@ namespace OnlineGame01.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("OnlineGame01.PlayerScore", b =>
+                {
+                    b.HasOne("OnlineGame01.User", "User")
+                        .WithMany("Scores")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OnlineGame01.User", b =>
+                {
+                    b.Navigation("Scores");
                 });
 #pragma warning restore 612, 618
         }

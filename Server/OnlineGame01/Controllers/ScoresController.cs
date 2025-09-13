@@ -1,8 +1,14 @@
 ﻿namespace OnlineGame01.Controllers;
 
-// Controllers/ScoresController.cs
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore; // これを追加
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using OnlineGame01.Dtos; // DTOの名前空間を追加
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using ZLinq;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -10,33 +16,48 @@ public class ScoresController : ControllerBase
 {
     private readonly GameDbContext _context;
 
-    // コンストラクタで、登録しておいたDbContextを受け取ります
     public ScoresController(GameDbContext context)
     {
         _context = context;
     }
 
-    // --- スコアを登録するための窓口 (POST) ---
     [HttpPost]
-    public async Task<IActionResult> AddScore([FromBody] PlayerScore score)
+    [Authorize] // この属性により、認証済みユーザーのみがこのAPIを呼び出せる
+    public async Task<IActionResult> AddScore([FromBody] ScorePostDto scoreData)
     {
-        // InMemoryDatabaseの代わりにDbContextを使います
-        score.Timestamp = DateTime.UtcNow;
-        _context.Scores.Add(score);
-        await _context.SaveChangesAsync(); // 変更をデータベースに保存（非同期）
+        // より安全で簡潔なユーザーIDの取得方法
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized("Invalid user token.");
+        }
+
+        var newScore = new PlayerScore
+        {
+            Score = scoreData.Score,
+            Timestamp = DateTime.UtcNow,
+            UserId = userId
+        };
+
+        _context.Scores.Add(newScore);
+        await _context.SaveChangesAsync();
 
         return Ok("Score added successfully!");
     }
 
-    // --- ランキングを取得するための窓口 (GET) ---
     [HttpGet]
-    public async Task<IActionResult> GetScores()
+    public async Task<ActionResult<IEnumerable<ScoreResponseDto>>> GetScores()
     {
-        // InMemoryDatabaseの代わりにDbContextを使います
         var topScores = await _context.Scores
+            .Include(s => s.User)
             .OrderByDescending(s => s.Score)
             .Take(10)
-            .ToListAsync(); // データベースからリストを取得（非同期）
+            .Select(s => new ScoreResponseDto
+            {
+                Username = s.User.Username,
+                Score = s.Score
+            })
+            .ToListAsync();
 
         return Ok(topScores);
     }

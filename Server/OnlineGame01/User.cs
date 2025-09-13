@@ -1,16 +1,20 @@
 ﻿namespace OnlineGame01;
 
 // User.cs
-using System.ComponentModel.DataAnnotations; // [Key] や [Required] のために必要
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 public class User
 {
-    [Key] // これが主キー（一意の識別子）であることを示す
+    [Key]
     public int Id { get; set; }
 
-    [Required] // この項目が必須であることを示す
+    [Required]
     public required string Username { get; set; }
 
-    [Required] // この項目が必須であることを示す
-    public required string PasswordHash { get; set; } // パスワードそのものではなく、ハッシュ化したものを保存
+    [Required]
+    public required string PasswordHash { get; set; }
+
+    // プロパティを初期化してNullを回避
+    public List<PlayerScore> Scores { get; set; } = new();
 }
