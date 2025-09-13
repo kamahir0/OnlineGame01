@@ -33,7 +33,7 @@ namespace OnlineGame01.Ui
                 int rank = 1;
                 foreach (var score in scores)
                 {
-                    sb.AppendLine($"{rank++}. {score.username}: {score.score}");
+                    sb.AppendLine($"{rank++}. {score.Username}: {score.Score}");
                 }
 
                 _rankingText.text = sb.ToString();
