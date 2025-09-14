@@ -47,6 +47,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // --- アプリケーションの構築 ---
 var app = builder.Build();
 
+// アプリケーションのスコープを作成
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        // GameDbContextインスタンスを取得
+        var context = services.GetRequiredService<GameDbContext>();
+        // 保留中のマイグレーションをデータベースに適用する
+        // データベースが存在しない場合は、データベースも作成される
+        context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        // エラーハンドリング（開発中はログに出力するのが一般的）
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred during migration.");
+    }
+}
 
 // --- HTTPリクエストパイプラインの設定セクション ---
 if (app.Environment.IsDevelopment())
