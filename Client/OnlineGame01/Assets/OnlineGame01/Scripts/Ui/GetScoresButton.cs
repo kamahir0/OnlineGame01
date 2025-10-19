@@ -26,7 +26,7 @@ namespace OnlineGame01.Ui
 
             try
             {
-                List<ScoreResponseData> scores = await ApiService.Instance.GetScoresAsync();
+                List<ScoreResponseData> scores = await new ApiService().GetScoresAsync();
                 _consoleText.text = "<color=green>Get Ranking Success!</color>";
 
                 var sb = new StringBuilder();

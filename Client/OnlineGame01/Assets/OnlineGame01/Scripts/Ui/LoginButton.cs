@@ -23,7 +23,7 @@ namespace OnlineGame01.Ui
             _consoleText.text = "Logging in...";
             try
             {
-                string response = await ApiService.Instance.LoginAsync(_usernameInput.text, _passwordInput.text);
+                string response = await new ApiService().LoginAsync(_usernameInput.text, _passwordInput.text);
                 _consoleText.text = $"<color=green>{response}</color>";
             }
             catch (Exception e)

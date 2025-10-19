@@ -28,7 +28,7 @@ namespace OnlineGame01.Ui
             _consoleText.text = "Posting score...";
             try
             {
-                string response = await ApiService.Instance.PostScoreAsync(score);
+                string response = await new ApiService().PostScoreAsync(score);
                 _consoleText.text = $"Success: {response}";
             }
             catch (Exception e)

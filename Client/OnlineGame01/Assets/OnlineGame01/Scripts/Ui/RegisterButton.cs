@@ -23,7 +23,7 @@ namespace OnlineGame01.Ui
             _consoleText.text = "Registering...";
             try
             {
-                string response = await ApiService.Instance.RegisterAsync(_usernameInput.text, _passwordInput.text);
+                string response = await new ApiService().RegisterAsync(_usernameInput.text, _passwordInput.text);
                 _consoleText.text = $"Success: {response}";
             }
             catch (Exception e)

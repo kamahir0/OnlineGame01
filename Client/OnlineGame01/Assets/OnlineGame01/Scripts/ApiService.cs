@@ -9,16 +9,11 @@ namespace OnlineGame01
 {
     public class ApiService
     {
-        // どこからでもアクセスできる静的なインスタンス（シングルトン）
-        public static readonly ApiService Instance = new();
+        private const string BaseUrlFormat = "http://{0}:8080/api";
+        private static string BaseUrl => string.Format(BaseUrlFormat, PublicIp.Current);
 
-        private const string BaseUrl = "http://54.253.102.85:8080/api"; // 自身の環境に合わせて変更
+        // 本来なら Repository で保持する
         private string _jwtToken;
-
-        // コンストラクタをprivateにして、外部からのインスタンス化を防ぐ
-        private ApiService() { }
-
-        // --- 各APIを呼び出す非同期メソッド ---
 
         /// <summary>
         /// ユーザーを登録します
