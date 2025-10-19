@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace OnlineGame01
 {
@@ -12,8 +13,8 @@ namespace OnlineGame01
         private const string BaseUrlFormat = "http://{0}:8080/api";
         private static string BaseUrl => string.Format(BaseUrlFormat, PublicIp.Current);
 
-        // 本来なら Repository で保持する
-        private string _jwtToken;
+        // NOTE: 本来なら Repository で保持する
+        private static string _jwtToken;
 
         /// <summary>
         /// ユーザーを登録します
@@ -46,7 +47,9 @@ namespace OnlineGame01
         {
             if (string.IsNullOrEmpty(_jwtToken))
             {
-                throw new Exception("You must be logged in to post a score.");
+                const string Message = "You must be logged in to post a score.";
+                Debug.LogError(Message);
+                throw new Exception(Message);
             }
 
             var scoreData = new ScorePostData { Score = score };
@@ -73,8 +76,9 @@ namespace OnlineGame01
             }
             else
             {
-                // エラー時は例外をスローする
-                throw new Exception(request.error + ": " + request.downloadHandler.text);
+                var message = request.error + ": " + request.downloadHandler.text;
+                Debug.LogError(message);
+                throw new Exception(message);
             }
         }
 
@@ -107,7 +111,9 @@ namespace OnlineGame01
             }
             else
             {
-                throw new Exception(request.error + ": " + request.downloadHandler.text);
+                var message = request.error + ": " + request.downloadHandler.text;
+                Debug.LogError(message);
+                throw new Exception(message);
             }
         }
     }
