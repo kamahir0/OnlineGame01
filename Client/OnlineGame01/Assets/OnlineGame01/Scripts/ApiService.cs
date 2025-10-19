@@ -19,10 +19,15 @@ namespace OnlineGame01
         /// <summary>
         /// ユーザーを登録します
         /// </summary>
-        public UniTask<string> RegisterAsync(string username, string password)
+        public async UniTask<string> RegisterAsync(string username, string password)
         {
             var userAuthData = new UserAuthData { Username = username, Password = password };
-            return PostJsonAsync($"{BaseUrl}/auth/register", userAuthData);
+            var response = await SendRequestAsync<UserAuthData, string>(
+                $"{BaseUrl}/auth/register", 
+                "POST", 
+                userAuthData
+            );
+            return response;
         }
 
         /// <summary>
@@ -31,10 +36,13 @@ namespace OnlineGame01
         public async UniTask<string> LoginAsync(string username, string password)
         {
             var userAuthData = new UserAuthData { Username = username, Password = password };
-            string responseJson = await PostJsonAsync($"{BaseUrl}/auth/login", userAuthData);
+            var response = await SendRequestAsync<UserAuthData, LoginResponseData>(
+                $"{BaseUrl}/auth/login", 
+                "POST", 
+                userAuthData
+            );
 
             // レスポンスからトークンを抽出し、保存する
-            var response = JsonConvert.DeserializeObject<LoginResponseData>(responseJson);
             _jwtToken = response.Token;
 
             return "Login successful!";
@@ -43,7 +51,7 @@ namespace OnlineGame01
         /// <summary>
         /// スコアを投稿します
         /// </summary>
-        public UniTask<string> PostScoreAsync(int score)
+        public async UniTask<string> PostScoreAsync(int score)
         {
             if (string.IsNullOrEmpty(_jwtToken))
             {
@@ -53,8 +61,13 @@ namespace OnlineGame01
             }
 
             var scoreData = new ScorePostData { Score = score };
-            // 認証ヘッダー付きでPOSTリクエストを送信
-            return PostJsonAsync($"{BaseUrl}/scores", scoreData, _jwtToken);
+            var response = await SendRequestAsync<ScorePostData, string>(
+                $"{BaseUrl}/scores", 
+                "POST", 
+                scoreData, 
+                _jwtToken
+            );
+            return response;
         }
 
         /// <summary>
@@ -62,38 +75,67 @@ namespace OnlineGame01
         /// </summary>
         public async UniTask<List<ScoreResponseData>> GetScoresAsync()
         {
-            using var request = UnityWebRequest.Get($"{BaseUrl}/scores");
-            
-            // 開発時用の証明書バイパス
-            request.certificateHandler = new BypassCertificate();
-
-            // SendWebRequestをawaitする
-            await request.SendWebRequest();
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                Debug.Log("[API] " + request.downloadHandler.text);
-                return JsonConvert.DeserializeObject<List<ScoreResponseData>>(request.downloadHandler.text);
-            }
-            else
-            {
-                var message = request.error + ": " + request.downloadHandler.text;
-                Debug.LogError(message);
-                throw new Exception(message);
-            }
+            var response = await SendRequestAsync<List<ScoreResponseData>>(
+                $"{BaseUrl}/scores", 
+                "GET"
+            );
+            return response;
         }
 
-        // --- 共通のPOST処理メソッド ---
-        private static async UniTask<string> PostJsonAsync(string url, object body, string token = null)
+        /// <summary>
+        /// 共通のHTTPリクエスト処理（ボディあり）
+        /// </summary>
+        private static async UniTask<TResponse> SendRequestAsync<TRequest, TResponse>(
+            string url, 
+            string method, 
+            TRequest body = default, 
+            string token = null
+        )
         {
-            using var request = new UnityWebRequest(url, "POST");
+            string responseJson = await SendRequestInternalAsync(url, method, body, token);
             
-            string jsonBody = JsonConvert.SerializeObject(body);
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+            // stringの場合はそのまま返す（デシリアライズ不要）
+            if (typeof(TResponse) == typeof(string))
+            {
+                return (TResponse)(object)responseJson;
+            }
+            
+            return JsonConvert.DeserializeObject<TResponse>(responseJson);
+        }
 
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        /// <summary>
+        /// 共通のHTTPリクエスト処理（ボディなし）
+        /// </summary>
+        private static async UniTask<TResponse> SendRequestAsync<TResponse>(
+            string url, 
+            string method, 
+            string token = null
+        )
+        {
+            string responseJson = await SendRequestInternalAsync<object>(url, method, null, token);
+            return JsonConvert.DeserializeObject<TResponse>(responseJson);
+        }
+
+        /// <summary> HTTPリクエストの実行と共通ログ処理 </summary>
+        private static async UniTask<string> SendRequestInternalAsync<TRequest>(
+            string url, 
+            string method, 
+            TRequest body = default, 
+            string token = null
+        )
+        {
+            using var request = new UnityWebRequest(url, method);
+
+            // ボディがある場合（POST, PUTなど）
+            if (body != null && !EqualityComparer<TRequest>.Default.Equals(body, default(TRequest)))
+            {
+                string jsonBody = JsonConvert.SerializeObject(body);
+                byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+                request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                request.SetRequestHeader("Content-Type", "application/json");
+            }
+
             request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
 
             // トークンが指定されていれば、認証ヘッダーを追加
             if (!string.IsNullOrEmpty(token))
@@ -104,16 +146,18 @@ namespace OnlineGame01
             // 開発時用の証明書バイパス
             request.certificateHandler = new BypassCertificate();
 
+            // リクエスト送信
             await request.SendWebRequest();
 
+            // 共通のログ出力とエラーハンドリング
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("[API] " + request.downloadHandler.text);
+                Debug.Log($"[API] {method} {url} - Success: {request.downloadHandler.text}");
                 return request.downloadHandler.text;
             }
             else
             {
-                var message = request.error + ": " + request.downloadHandler.text;
+                var message = $"[API] {method} {url} - Error: {request.error} | {request.downloadHandler.text}";
                 Debug.LogError(message);
                 throw new Exception(message);
             }
