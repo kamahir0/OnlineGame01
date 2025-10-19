@@ -12,7 +12,7 @@ namespace OnlineGame01
         // どこからでもアクセスできる静的なインスタンス（シングルトン）
         public static readonly ApiService Instance = new();
 
-        private const string BaseUrl = "https://localhost:7037/api"; // 自身の環境に合わせて変更
+        private const string BaseUrl = "http://54.253.102.85:8080/api"; // 自身の環境に合わせて変更
         private string _jwtToken;
 
         // コンストラクタをprivateにして、外部からのインスタンス化を防ぐ
