@@ -72,6 +72,7 @@ namespace OnlineGame01
 
             if (request.result == UnityWebRequest.Result.Success)
             {
+                Debug.Log("[API] " + request.downloadHandler.text);
                 return JsonConvert.DeserializeObject<List<ScoreResponseData>>(request.downloadHandler.text);
             }
             else
@@ -107,6 +108,7 @@ namespace OnlineGame01
 
             if (request.result == UnityWebRequest.Result.Success)
             {
+                Debug.Log("[API] " + request.downloadHandler.text);
                 return request.downloadHandler.text;
             }
             else
